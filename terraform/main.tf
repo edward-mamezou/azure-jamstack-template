@@ -25,13 +25,15 @@ resource "azurerm_storage_account" "example" {
   location                 = azurerm_resource_group.example.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-  allow_blob_public_access = true
+
+  static_website {
+    index_document = "index.html"
+  }
 }
 
 resource "azurerm_storage_container" "example" {
   name                  = "content"
   storage_account_name  = azurerm_storage_account.example.name
-  container_access_type = "blob"
 
   depends_on = [
     azurerm_storage_account.example
@@ -51,7 +53,6 @@ resource "azurerm_frontdoor" "example" {
     forwarding_configuration {
       forwarding_protocol = "HttpsOnly"
       backend_pool_name   = "exampleBackendBlobStorage"
-      custom_forwarding_path = "/content/"
     }
   }
 
@@ -61,7 +62,7 @@ resource "azurerm_frontdoor" "example" {
 
   backend_pool_health_probe {
     name = "exampleHealthProbeSetting1"
-    path = "/content/index.html"
+    path = "/index.html"
     protocol = "Https"
     probe_method = "HEAD"
   }
@@ -69,8 +70,8 @@ resource "azurerm_frontdoor" "example" {
   backend_pool {
     name = "exampleBackendBlobStorage"
     backend {
-      host_header = azurerm_storage_account.example.primary_blob_host
-      address     = azurerm_storage_account.example.primary_blob_host
+      host_header = azurerm_storage_account.example.primary_web_host
+      address     = azurerm_storage_account.example.primary_web_host
       http_port   = 80
       https_port  = 443
     }
